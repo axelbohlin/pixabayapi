@@ -2,31 +2,34 @@ const auth = "23508945-d253b032e43e7508a11e2da8c";
 const next = document.querySelector(".next");
 const previous = document.querySelector(".previous")
 const input = document.querySelector("input");
-const searchbutton = document.querySelector(".searchbutton")
 const selectcolor = document.querySelector(".colors")
-const gallery = document.querySelector(".gallery")
+const gallery = document.querySelector(".gallery");
 
+let previousQuery = "";
+let previousColor = "";
 let pagenr = 1;
 let query = "";
 let color = "";
 let maxPage = 0;
 
-previous.style.visibility="hidden";
-next.style.visibility="hidden";
+previous.style.visibility = "hidden";
+next.style.visibility = "hidden";
 
 input.addEventListener("input", (e) => {
     e.preventDefault();
     query = e.target.value;
 });
 
-function getSelectValue()
-{
+// Color search
+function getSelectValue() {
     color = document.getElementById("list").value;
 }
 
-async function searchImage(query, pagenr, color)
-{
-    while(gallery.firstChild) {
+// Search image function
+async function searchImage(query, pagenr, color) {
+
+    // Clear pictures at new search
+    while (gallery.firstChild) {
         gallery.removeChild(gallery.firstChild);
     }
 
@@ -34,13 +37,15 @@ async function searchImage(query, pagenr, color)
 
     );
     const result = await data.json();
+    if (result.totalHits == 0) {
+        next.style.visibility = "hidden";
+    }
     result.hits.forEach((hit) => {
 
         const images = document.createElement("div")
         const pic = document.createElement("img");
         const tags = document.createElement("p");
         const user = document.createElement("p");
-
         pic.src = hit.webformatURL;
         tags.textContent = hit.tags;
         user.textContent = 'Taken by: ' + hit.user;
@@ -50,52 +55,47 @@ async function searchImage(query, pagenr, color)
         images.appendChild(tags);
         images.appendChild(user);
 
+        // Find last page and hide next button
+        maxPage = Math.ceil(result.totalHits / 10);
         if (pagenr < maxPage) {
-            next.style.visibility = "visible"
+            next.style.visibility = "visible";
+        } else if (maxPage < 2) {
+            next.style.visibility = "hidden";
         }
-        maxPage = Math.ceil(result.totalHits/10);
     });
 }
 
-searchbutton.addEventListener("click", (event)=> {
-    if(input.value === "") return;
+var form = document.getElementById('form')
+
+form.addEventListener('submit', function(event) {
+    event.preventDefault();
+    previousQuery = query;
+    previousColor = color;
+    if (input.value === "") return;
     pagenr = 1;
-    previous.style.visibility="hidden";
-    searchImage(query,pagenr,color);
+    previous.style.visibility = "hidden";
+    searchImage(query, pagenr, color);
     if (query.toLowerCase() !== "capybara") {
         alert("Are you sure you don't want to search for capybara?")
     }
 });
 
-input.addEventListener('keyup', function(evt) {
-    if (evt.key === 'Enter') {
-        if (input.value === "") return;
-        previous.style.visibility = "hidden";
-        pagenr = 1;
-        searchImage(query, pagenr, color);
-        if (query.toLowerCase() !== "capybara") {
-            alert("Are you sure you don't want to search for capybara?")
-        }
-    }
-});
-
-
+// Next page
 next.addEventListener("click", () => {
     pagenr++;
-    searchImage(query, pagenr, color)
-    previous.style.visibility="visible";
+    searchImage(previousQuery, pagenr, previousColor)
+    previous.style.visibility = "visible";
     if (pagenr >= maxPage) {
         next.style.visibility = "hidden";
     }
+
 });
 
+// Previous page
 previous.addEventListener("click", () => {
-    if (pagenr === 2)
-    {
-        previous.style.visibility="hidden";
+    if (pagenr === 2) {
+        previous.style.visibility = "hidden";
     }
-        pagenr--;
-        searchImage(query, pagenr, color)
+    pagenr--;
+    searchImage(previousQuery, pagenr, previousColor)
 });
-
-
